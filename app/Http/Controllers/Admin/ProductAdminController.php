@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Livewire\WithFileUploads;
+
 
 class ProductAdminController extends Controller
 {
