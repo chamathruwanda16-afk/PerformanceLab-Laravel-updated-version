@@ -6,8 +6,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql zip \
     && a2enmod rewrite
 
-# ✅ Fix: ensure only prefork MPM is enabled
-RUN a2dismod mpm_event && a2enmod mpm_prefork
+# ✅ Fix: ensure only prefork MPM is enabled (disable both others safely)
+RUN a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork
 
 # Build deps for PECL and install MongoDB extension
 RUN apt-get update && apt-get install -y $PHPIZE_DEPS \
@@ -16,14 +17,12 @@ RUN apt-get update && apt-get install -y $PHPIZE_DEPS \
     && apt-get purge -y --auto-remove $PHPIZE_DEPS \
     && rm -rf /var/lib/apt/lists/*
 
-# ✅ Railway uses dynamic PORT, not 80
+# Set Laravel public folder as doc root
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
   /etc/apache2/sites-available/*.conf \
   /etc/apache2/apache2.conf \
   /etc/apache2/conf-available/*.conf
-
-RUN sed -ri "s/Listen 80/Listen \${PORT}/" /etc/apache2/ports.conf
 
 WORKDIR /var/www/html
 
@@ -33,3 +32,9 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
+
+# ✅ Add startup script (sets Apache Listen port at runtime)
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
