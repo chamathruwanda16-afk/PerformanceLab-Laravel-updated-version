@@ -1,12 +1,16 @@
 FROM php:8.2-apache
 
+# ✅ Force rebuild when value changes
+ARG CACHE_BUST=1
+RUN echo "cache bust: $CACHE_BUST"
+
 # Install system deps + PHP extensions
 RUN apt-get update && apt-get install -y \
     git unzip libzip-dev \
     && docker-php-ext-install pdo_mysql zip \
     && a2enmod rewrite
 
-# ✅ Fix: ensure only prefork MPM is enabled (disable both others safely)
+# ✅ Ensure ONLY prefork MPM is enabled
 RUN a2dismod mpm_event mpm_worker || true \
     && a2enmod mpm_prefork
 
@@ -33,7 +37,7 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# ✅ Add startup script (sets Apache Listen port at runtime)
+# ✅ Runtime startup script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
