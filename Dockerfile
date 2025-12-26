@@ -41,4 +41,8 @@ RUN chown -R www-data:www-data storage bootstrap/cache
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
+RUN echo "ErrorLog /proc/self/fd/2" >> /etc/apache2/apache2.conf \
+ && echo "CustomLog /proc/self/fd/1 combined" >> /etc/apache2/apache2.conf
+
+
 CMD ["/start.sh"]
