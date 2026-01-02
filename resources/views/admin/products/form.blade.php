@@ -4,7 +4,7 @@
       {{ $mode === 'create' ? 'Add Product' : 'Edit Product' }}
     </h1>
 
-    {{-- IMPORTANT: Add enctype for file uploads --}}
+    
     <form class="mt-6 space-y-4"
           action="{{ $mode==='create' ? route('admin.products.store') : route('admin.products.update', $product) }}"
           method="POST"
@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      {{-- ✅ Livewire Image Upload + Preview (replaces JS preview) --}}
+      {{--  Livewire Image Upload  --}}
       @livewire('admin.product-image-preview', [
           'existingImage' => ($mode === 'edit' && $product->image_path) ? $product->image_url : null
       ])

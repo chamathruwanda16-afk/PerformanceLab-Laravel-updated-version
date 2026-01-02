@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
+use App\Models\Category;
+use App\Models\CartItem;
+use App\Models\OrderItem;
 
 class Product extends Model
 {
@@ -20,25 +23,48 @@ class Product extends Model
         'image_path',
     ];
 
+    /**
+     * A product belongs to a category
+     */
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    // Route model binding by slug
+    /**
+     * A product can appear in many cart items
+     */
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    /**
+     * A product can appear in many order items
+     */
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Route model binding by slug instead of ID
+     */
     public function getRouteKeyName()
     {
         return 'slug';
     }
 
-   
+    /**
+     * Accessor for product image URL
+     */
     public function getImageUrlAttribute(): string
     {
         $path = trim((string) $this->image_path);
 
         // Stored file path on "public" disk
         if ($path && ! Str::startsWith($path, ['http://', 'https://'])) {
-            return asset('storage/' . $path);   
+            return asset('storage/' . $path);
         }
 
         // Old records that still have full URLs
