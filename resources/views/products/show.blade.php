@@ -40,6 +40,14 @@
           </a>
         @endauth
 
+        <p class="text-green-500">
+    Customer: {{ $order->user->name }}
+</p>  
+
+<li>
+    {{ $item->product->name }}
+</li>
+
         <dl class="mt-8 grid grid-cols-2 gap-4 text-sm">
           <div class="rounded-xl bg-white/5 border border-white/10 p-4">
             <dt class="text-gray-400">SKU</dt>
