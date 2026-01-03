@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
-# ✅ Force rebuild when value changes
-ARG CACHE_BUST=1
+# ✅ Force rebuild when value changes (bump this when redeploying)
+ARG CACHE_BUST=2
 RUN echo "cache bust: $CACHE_BUST"
 
 # Install system deps + PHP extensions
@@ -10,9 +10,12 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql zip \
     && a2enmod rewrite
 
-# ✅ Ensure ONLY prefork MPM is enabled
-RUN a2dismod mpm_event mpm_worker || true \
-    && a2enmod mpm_prefork
+# ✅ HARD reset: ensure ONLY prefork MPM is enabled
+RUN a2dismod mpm_event mpm_worker mpm_prefork || true \
+ && rm -f /etc/apache2/mods-enabled/mpm_event.* || true \
+ && rm -f /etc/apache2/mods-enabled/mpm_worker.* || true \
+ && rm -f /etc/apache2/mods-enabled/mpm_prefork.* || true \
+ && a2enmod mpm_prefork
 
 # Build deps for PECL and install MongoDB extension
 RUN apt-get update && apt-get install -y $PHPIZE_DEPS \
@@ -43,6 +46,6 @@ RUN chmod +x /start.sh
 
 RUN echo "ErrorLog /proc/self/fd/2" >> /etc/apache2/apache2.conf \
  && echo "CustomLog /proc/self/fd/1 combined" >> /etc/apache2/apache2.conf
-
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 CMD ["/start.sh"]
