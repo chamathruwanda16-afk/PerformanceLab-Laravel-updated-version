@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
 # ✅ Force rebuild when value changes (bump this when redeploying)
-ARG CACHE_BUST=2
+ARG CACHE_BUST=6
 RUN echo "cache bust: $CACHE_BUST"
 
 # Install system deps + PHP extensions
@@ -46,6 +46,7 @@ RUN chmod +x /start.sh
 
 RUN echo "ErrorLog /proc/self/fd/2" >> /etc/apache2/apache2.conf \
  && echo "CustomLog /proc/self/fd/1 combined" >> /etc/apache2/apache2.conf
+
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 CMD ["/start.sh"]
