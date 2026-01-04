@@ -6,6 +6,10 @@ PORT="${PORT:-80}"
 
 echo "Starting Apache on PORT=$PORT"
 
+echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf
+a2enconf servername >/dev/null 2>&1 || true
+
+
 # ✅ FIX: ensure ONLY ONE MPM module is enabled (prefork)
 a2dismod mpm_event mpm_worker mpm_prefork >/dev/null 2>&1 || true
 rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* /etc/apache2/mods-enabled/mpm_prefork.* || true
