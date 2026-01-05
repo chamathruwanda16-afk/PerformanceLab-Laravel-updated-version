@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
 # ✅ Force rebuild when value changes
-ARG CACHE_BUST=8
+ARG CACHE_BUST=9
 RUN echo "cache bust: $CACHE_BUST"
 
 # Install system dependencies
@@ -16,15 +16,17 @@ RUN docker-php-ext-install \
     zip mbstring exif pcntl bcmath gd opcache \
     && docker-php-ext-enable opcache
 
-# Install MongoDB extension
+# Install and enable MongoDB extension properly
 RUN pecl install mongodb-1.21.2 \
-    && docker-php-ext-enable mongodb
+    && echo "extension=mongodb.so" > /usr/local/etc/php/conf.d/mongodb.ini
 
 # Enable Apache modules
 RUN a2enmod rewrite headers
-RUN a2enmod php8.2
 
-# Configure Apache MPM prefork (required for PHP module)
+# IMPORTANT: The php:8.2-apache image already has PHP module enabled
+# Remove the problematic line: RUN a2enmod php8.2
+
+# Configure Apache MPM prefork
 RUN a2dismod mpm_event mpm_worker || true \
  && a2enmod mpm_prefork
 
@@ -52,7 +54,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy application files
 COPY . .
 
-# Install dependencies (skip dev in production)
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Generate Laravel key if not exists
@@ -63,7 +65,13 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 # Configure PHP for production
-COPY php.ini /usr/local/etc/php/conf.d/php.ini
+RUN echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/custom.ini \
+ && echo "upload_max_filesize = 64M" >> /usr/local/etc/php/conf.d/custom.ini \
+ && echo "post_max_size = 64M" >> /usr/local/etc/php/conf.d/custom.ini \
+ && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/custom.ini \
+ && echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/custom.ini \
+ && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/custom.ini \
+ && echo "display_errors=Off" >> /usr/local/etc/php/conf.d/custom.ini
 
 # Configure Apache logs
 RUN echo "ErrorLog /proc/self/fd/2" >> /etc/apache2/apache2.conf \
