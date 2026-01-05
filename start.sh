@@ -12,6 +12,12 @@ a2enconf servername >/dev/null 2>&1 || true
 printf "Listen %s\n" "$PORT" > /etc/apache2/ports.conf
 sed -i "s/<VirtualHost \*:.*>/<VirtualHost \*:${PORT}>/" /etc/apache2/sites-available/000-default.conf || true
 
+# DEBUG: Show what ports we are listening on
+echo "DEBUG: ports.conf content:"
+cat /etc/apache2/ports.conf
+echo "DEBUG: 000-default.conf VirtualHost line:"
+grep "VirtualHost" /etc/apache2/sites-available/000-default.conf
+
 # Ensure correct permissions (CRITICAL)
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
