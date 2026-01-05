@@ -17,8 +17,8 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
 # 🔥 CRITICAL: clear stale Laravel caches (Railway injects env at runtime)
+php artisan optimize:clear || true
 php artisan config:clear || true
-php artisan cache:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
 
