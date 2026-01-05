@@ -8,8 +8,8 @@ echo "Starting Laravel on Railway (PORT=$PORT)"
 echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf
 a2enconf servername >/dev/null 2>&1 || true
 
-# Force Apache to listen on Railway port
-printf "Listen %s\n" "$PORT" > /etc/apache2/ports.conf
+# Force Apache to listen on Railway port (IPv4 explicit)
+printf "Listen 0.0.0.0:%s\n" "$PORT" > /etc/apache2/ports.conf
 sed -i "s/<VirtualHost \*:.*>/<VirtualHost \*:${PORT}>/" /etc/apache2/sites-available/000-default.conf || true
 
 # DEBUG: Show what ports we are listening on
