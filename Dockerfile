@@ -1,8 +1,18 @@
 FROM php:8.2-apache
 
 # ✅ Force rebuild when value changes
-ARG CACHE_BUST=9
+ARG CACHE_BUST=10
 RUN echo "cache bust: $CACHE_BUST"
+
+# First, disable ALL MPM modules completely
+RUN a2dismod mpm_event mpm_worker mpm_prefork || true
+
+# Remove any MPM configuration files
+RUN rm -f /etc/apache2/mods-enabled/mpm_*.load \
+    /etc/apache2/mods-enabled/mpm_*.conf || true
+
+# Now enable ONLY mpm_prefork
+RUN a2enmod mpm_prefork
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -16,19 +26,12 @@ RUN docker-php-ext-install \
     zip mbstring exif pcntl bcmath gd opcache \
     && docker-php-ext-enable opcache
 
-# Install and enable MongoDB extension properly
+# Install and enable MongoDB extension
 RUN pecl install mongodb-1.21.2 \
     && echo "extension=mongodb.so" > /usr/local/etc/php/conf.d/mongodb.ini
 
-# Enable Apache modules
+# Enable Apache modules (AFTER MPM is configured)
 RUN a2enmod rewrite headers
-
-# IMPORTANT: The php:8.2-apache image already has PHP module enabled
-# Remove the problematic line: RUN a2enmod php8.2
-
-# Configure Apache MPM prefork
-RUN a2dismod mpm_event mpm_worker || true \
- && a2enmod mpm_prefork
 
 # Set Laravel public folder as document root
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
@@ -77,6 +80,9 @@ RUN echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/custom.ini \
 RUN echo "ErrorLog /proc/self/fd/2" >> /etc/apache2/apache2.conf \
  && echo "CustomLog /proc/self/fd/1 combined" >> /etc/apache2/apache2.conf \
  && echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Verify only one MPM is enabled (debug step)
+RUN echo "=== Checking MPM modules ===" && ls -la /etc/apache2/mods-enabled/mpm_* 2>/dev/null || echo "No MPM modules found"
 
 # Start Apache with Railway's PORT
 CMD sed -i "s/\${PORT}/${PORT}/g" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf && \
