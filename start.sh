@@ -18,19 +18,24 @@ cat /etc/apache2/ports.conf
 echo "DEBUG: 000-default.conf VirtualHost line:"
 grep "VirtualHost" /etc/apache2/sites-available/000-default.conf
 
-# FIX: Handle raw variable references from Railway
-if [ "$DB_HOST" = "\${MYSQLHOST}" ] && [ -n "$MYSQLHOST" ]; then
-    echo "Fixing DB_HOST..."
+# FIX: Unconditionally use authoritative Railway MySQL variables
+if [ -n "$MYSQLHOST" ]; then
+    echo "Using Railway MYSQLHOST: $MYSQLHOST"
     export DB_HOST="$MYSQLHOST"
 fi
-if [ "$DB_DATABASE" = "\${MYSQLDATABASE}" ] && [ -n "$MYSQLDATABASE" ]; then
-    echo "Fixing DB_DATABASE..."
+if [ -n "$MYSQLDATABASE" ]; then
+    echo "Using Railway MYSQLDATABASE: $MYSQLDATABASE"
     export DB_DATABASE="$MYSQLDATABASE"
 fi
-# Map other Railway MySQL variables if standard ones are missing
-export DB_PORT="${DB_PORT:-$MYSQLPORT}"
-export DB_USERNAME="${DB_USERNAME:-$MYSQLUSER}"
-export DB_PASSWORD="${DB_PASSWORD:-$MYSQLPASSWORD}"
+if [ -n "$MYSQLPORT" ]; then
+    export DB_PORT="$MYSQLPORT"
+fi
+if [ -n "$MYSQLUSER" ]; then
+    export DB_USERNAME="$MYSQLUSER"
+fi
+if [ -n "$MYSQLPASSWORD" ]; then
+    export DB_PASSWORD="$MYSQLPASSWORD"
+fi
 
 # Ensure correct permissions (CRITICAL)
 chown -R www-data:www-data storage bootstrap/cache
