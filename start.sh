@@ -18,6 +18,20 @@ cat /etc/apache2/ports.conf
 echo "DEBUG: 000-default.conf VirtualHost line:"
 grep "VirtualHost" /etc/apache2/sites-available/000-default.conf
 
+# FIX: Handle raw variable references from Railway
+if [ "$DB_HOST" = "\${MYSQLHOST}" ] && [ -n "$MYSQLHOST" ]; then
+    echo "Fixing DB_HOST..."
+    export DB_HOST="$MYSQLHOST"
+fi
+if [ "$DB_DATABASE" = "\${MYSQLDATABASE}" ] && [ -n "$MYSQLDATABASE" ]; then
+    echo "Fixing DB_DATABASE..."
+    export DB_DATABASE="$MYSQLDATABASE"
+fi
+# Map other Railway MySQL variables if standard ones are missing
+export DB_PORT="${DB_PORT:-$MYSQLPORT}"
+export DB_USERNAME="${DB_USERNAME:-$MYSQLUSER}"
+export DB_PASSWORD="${DB_PASSWORD:-$MYSQLPASSWORD}"
+
 # Ensure correct permissions (CRITICAL)
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
