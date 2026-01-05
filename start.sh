@@ -37,6 +37,9 @@ if [ -n "$MYSQLPASSWORD" ]; then
     export DB_PASSWORD="$MYSQLPASSWORD"
 fi
 
+# FIX: Force Laravel to use MySQL (otherwise it falls back to sqlite)
+export DB_CONNECTION=mysql
+
 # Ensure correct permissions (CRITICAL)
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
