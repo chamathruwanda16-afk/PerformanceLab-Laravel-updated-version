@@ -2,6 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 
+// ✅ TEMP: Health check to confirm Laravel is responding on Railway
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'time' => now(),
+    ]);
+});
+
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController; 
 use App\Http\Controllers\CartController;
@@ -161,11 +169,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-/*
-|--------------------------------------------------------------------------
-| Admin Panel
-|--------------------------------------------------------------------------
-*/
+// admin panel/*
 Route::middleware(['auth', 'can:admin'])
     ->prefix('admin')
     ->name('admin.')
