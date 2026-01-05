@@ -11,10 +11,8 @@ RUN apt-get update && apt-get install -y \
     && a2enmod rewrite
 
 # ✅ HARD reset: ensure ONLY prefork MPM is enabled
-RUN a2dismod mpm_event mpm_worker mpm_prefork || true \
- && rm -f /etc/apache2/mods-enabled/mpm_event.* || true \
- && rm -f /etc/apache2/mods-enabled/mpm_worker.* || true \
- && rm -f /etc/apache2/mods-enabled/mpm_prefork.* || true \
+# Ensure ONLY prefork MPM is enabled
+RUN a2dismod mpm_event mpm_worker || true \
  && a2enmod mpm_prefork
 
 # Build deps for PECL and install MongoDB extension
