@@ -2,16 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
-// ✅ TEMP: Health check to confirm Laravel is responding on Railway
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'ok',
-        'time' => now(),
-    ]);
-});
-
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ProductController; 
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AccountController;
@@ -29,6 +21,19 @@ use App\Http\Controllers\Admin\AnalyticsController;
 // MongoDB
 use App\Http\Controllers\SearchController;
 use App\Models\SearchLog;
+
+
+/*
+|--------------------------------------------------------------------------
+| ✅ TEMP: Health check to confirm Laravel is responding on Railway
+|--------------------------------------------------------------------------
+*/
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'time'   => now(),
+    ]);
+});
 
 
 /*
@@ -169,7 +174,11 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-// admin panel/*
+/*
+|--------------------------------------------------------------------------
+| Admin Panel
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'can:admin'])
     ->prefix('admin')
     ->name('admin.')
