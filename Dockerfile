@@ -1,57 +1,41 @@
-# Base PHP + Apache
 FROM php:8.2-apache
 
-# Install dependencies
+# 1) System deps + PHP extensions
 RUN apt-get update && apt-get install -y \
-    git zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
-    libxml2-dev libzip-dev curl gnupg nodejs npm \
-    && docker-php-ext-install pdo pdo_mysql zip gd
+    git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    libonig-dev libxml2-dev curl gnupg \
+  && docker-php-ext-configure gd --with-freetype --with-jpeg \
+  && docker-php-ext-install pdo_mysql zip gd \
+  && a2enmod rewrite \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install MongoDB PHP driver
-RUN pecl install mongodb \
+RUN sudo a2dismod worker
+
+# 2) MongoDB PHP extension (fixes your composer ext-mongodb error)
+RUN pecl install mongodb-1.21.2 \
     && docker-php-ext-enable mongodb
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+    
 
-# Set working directory
+# 3) Set Laravel public as Apache docroot
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+ && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
 WORKDIR /var/www/html
 
-# Copy  the app
+# 4) Copy app
 COPY . .
 
-# Install PHP dependencies
+# 5) Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN composer install --no-dev --optimize-autoloader
 
-RUN mkdir -p storage/app/public \
-    && chown -R www-data:www-data storage \
-    && chmod -R 755 storage
+# 6) Install PHP deps (no-dev for production)
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
+# 7) Permissions for Laravel
+RUN chown -R www-data:www-data storage bootstrap/cache \
+ && chmod -R 775 storage bootstrap/cache
 
-
-# Create storage symlink
-RUN php artisan storage:link
-
-# Copy default images into storage/app/public
-COPY storage/app/public/ storage/app/public/
-
-# inside your container
-RUN ls -l public/storage
-RUN ls -l storage/app/public
-
-# Copy package.json for caching and install node deps
-RUN npm ci && npm run build
-
-# Set Apache to serve Laravel's public folder
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
-
-
-# Set correct permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Expose Apache port
 EXPOSE 80
-
-# Start Apache
 CMD ["apache2-foreground"]
