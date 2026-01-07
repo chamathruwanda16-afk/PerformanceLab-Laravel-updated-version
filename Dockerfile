@@ -1,14 +1,18 @@
 FROM php:8.2-apache
 
 # 1) System deps + PHP extensions
-# Added 'a2dismod mpm_event mpm_worker' at the end to fix the conflict
+# We manually delete mpm_event and mpm_worker config files to prevent the conflict
 RUN apt-get update && apt-get install -y \
     git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev curl gnupg \
   && docker-php-ext-configure gd --with-freetype --with-jpeg \
   && docker-php-ext-install pdo_mysql zip gd \
   && a2enmod rewrite \
-  && a2dismod mpm_event mpm_worker \
+  && rm -f /etc/apache2/mods-enabled/mpm_event.conf \
+  && rm -f /etc/apache2/mods-enabled/mpm_event.load \
+  && rm -f /etc/apache2/mods-enabled/mpm_worker.conf \
+  && rm -f /etc/apache2/mods-enabled/mpm_worker.load \
+  && a2enmod mpm_prefork \
   && rm -rf /var/lib/apt/lists/*
 
 # 2) MongoDB PHP extension
