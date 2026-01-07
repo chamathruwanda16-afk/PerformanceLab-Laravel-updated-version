@@ -1,21 +1,26 @@
+
 {
-  "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
+    "dockerfilePath": "./dockerfile"
   },
   "deploy": {
-    "numReplicas": 1,
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "startCommand": "apache2-foreground"
   },
-  "environments": {
-    "production": {
-      "variables": {
-        "APP_ENV": "production",
-        "APP_DEBUG": "false",
-        "APP_URL": "https://your-app-name.railway.app"
-      }
-    }
-  }
+  "variables": [
+    "APP_KEY",
+    "APP_ENV",
+    "APP_DEBUG",
+    "APP_URL",
+    "DB_CONNECTION",
+    "DB_HOST",
+    "DB_PORT",
+    "DB_DATABASE",
+    "DB_USERNAME",
+    "DB_PASSWORD",
+    "MONGO_DB",
+    "MONGO_HOST",
+    "MONGO_PORT",
+    "MONGO_USER",
+    "MONGO_PASSWORD"
+  ]
 }

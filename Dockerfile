@@ -1,51 +1,37 @@
 FROM php:8.2-apache
 
-# ✅ Force rebuild when value changes (bump this when redeploying)
-ARG CACHE_BUST=6
-RUN echo "cache bust: $CACHE_BUST"
-
-# Install system deps + PHP extensions
+# 1) System deps + PHP extensions
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev \
-    && docker-php-ext-install pdo_mysql zip \
-    && a2enmod rewrite
+    git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    libonig-dev libxml2-dev curl gnupg \
+  && docker-php-ext-configure gd --with-freetype --with-jpeg \
+  && docker-php-ext-install pdo_mysql zip gd \
+  && a2enmod rewrite \
+  && rm -rf /var/lib/apt/lists/*
 
-# ✅ HARD reset: ensure ONLY prefork MPM is enabled
-RUN rm -f /etc/apache2/mods-enabled/mpm_*.load \
- && rm -f /etc/apache2/mods-enabled/mpm_*.conf \
- && a2enmod mpm_prefork
+# 2) MongoDB PHP extension (fixes your composer ext-mongodb error)
+RUN pecl install mongodb \
+  && docker-php-ext-enable mongodb
 
-
-# Build deps for PECL and install MongoDB extension
-RUN apt-get update && apt-get install -y $PHPIZE_DEPS \
-    && pecl install mongodb-1.21.2 \
-    && docker-php-ext-enable mongodb \
-    && apt-get purge -y --auto-remove $PHPIZE_DEPS \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set Laravel public folder as doc root
+# 3) Set Laravel public as Apache docroot
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
-  /etc/apache2/sites-available/*.conf \
-  /etc/apache2/apache2.conf \
-  /etc/apache2/conf-available/*.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+ && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 WORKDIR /var/www/html
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# 4) Copy app
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader
+# 5) Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+# 6) Install PHP deps (no-dev for production)
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-# ✅ Runtime startup script
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+# 7) Permissions for Laravel
+RUN chown -R www-data:www-data storage bootstrap/cache \
+ && chmod -R 775 storage bootstrap/cache
 
-RUN echo "ErrorLog /proc/self/fd/2" >> /etc/apache2/apache2.conf \
- && echo "CustomLog /proc/self/fd/1 combined" >> /etc/apache2/apache2.conf
-
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-CMD ["/start.sh"]
+EXPOSE 80
+CMD ["apache2-foreground"]
