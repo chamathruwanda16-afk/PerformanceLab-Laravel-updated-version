@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
   && docker-php-ext-configure gd --with-freetype --with-jpeg \
   && docker-php-ext-install pdo_mysql zip gd \
   && a2enmod rewrite \
-  && a2dismod worker \
+  && a2dismod mpm_event mpm_worker \
   && rm -rf /var/lib/apt/lists/*
 
 # 2) MongoDB PHP extension
