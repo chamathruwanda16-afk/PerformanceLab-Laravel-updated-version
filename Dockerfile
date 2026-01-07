@@ -1,19 +1,19 @@
 FROM php:8.2-apache
 
 # 1) System deps + PHP extensions
+# Added 'a2dismod mpm_event mpm_worker' at the end to fix the conflict
 RUN apt-get update && apt-get install -y \
     git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev curl gnupg \
   && docker-php-ext-configure gd --with-freetype --with-jpeg \
   && docker-php-ext-install pdo_mysql zip gd \
   && a2enmod rewrite \
+  && a2dismod mpm_event mpm_worker \
   && rm -rf /var/lib/apt/lists/*
 
-# 2) MongoDB PHP extension (fixes your composer ext-mongodb error)
+# 2) MongoDB PHP extension
 RUN pecl install mongodb-1.21.2 \
     && docker-php-ext-enable mongodb
-
-    
 
 # 3) Set Laravel public as Apache docroot
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
@@ -28,10 +28,10 @@ COPY . .
 # 5) Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# 6) Install PHP deps (no-dev for production)
+# 6) Install PHP deps
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-# 7) Permissions for Laravel
+# 7) Permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
 
