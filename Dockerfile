@@ -10,8 +10,10 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 # 2) MongoDB PHP extension (fixes your composer ext-mongodb error)
-RUN pecl install mongodb \
-  && docker-php-ext-enable mongodb
+RUN pecl install mongodb-1.21.2 \
+    && docker-php-ext-enable mongodb
+
+    
 
 # 3) Set Laravel public as Apache docroot
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
