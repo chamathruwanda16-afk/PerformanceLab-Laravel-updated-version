@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
-# 1) System deps + PHP extensions + Node.js/NPM
-# We include the "rm -f" commands here to fix the Apache MPM crash
+# 1) System deps + PHP extensions + Node.js + MPM FIX
+# We use 'rm -f' to remove conflicting default Apache modules preventing the crash
 RUN apt-get update && apt-get install -y \
     git zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
     libxml2-dev libzip-dev curl gnupg nodejs npm \
@@ -14,38 +14,35 @@ RUN apt-get update && apt-get install -y \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
-# 2) MongoDB PHP driver
-RUN pecl install mongodb \
+# 2) MongoDB (FIXED: Pinned to version 1.21.2 to match your composer.lock)
+RUN pecl install mongodb-1.21.2 \
     && docker-php-ext-enable mongodb
 
-# 3) Set working directory
+# 3) Set Workdir
 WORKDIR /var/www/html
 
-# 4) Copy the app code
+# 4) Copy App
 COPY . .
 
-# 5) Install PHP dependencies
+# 5) PHP Dependencies
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN composer install --no-dev --optimize-autoloader
 
-# 6) Frontend Build (NPM)
-# We do this AFTER composer to keep layers cached if only JS changes
+# 6) Frontend Build
 RUN npm ci && npm run build
 
-# 7) Apache Configuration
-# Point Apache to the 'public' folder
+# 7) Setup Storage (mkdir instead of COPY to fix "file not found" error)
+RUN mkdir -p storage/app/public \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+# 8) Apache Config
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
  && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# 8) Storage & Permissions
-# Create the symlink for storage
+# 9) Link Storage
 RUN php artisan storage:link
 
-# Fix permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
 EXPOSE 80
-
 CMD ["apache2-foreground"]
