@@ -1,39 +1,57 @@
+# Base PHP + Apache
 FROM php:8.2-apache
 
-# 1) System deps + PHP extensions
-# Added 'a2dismod mpm_event mpm_worker' at the end to fix the conflict
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
-    libonig-dev libxml2-dev curl gnupg \
-  && docker-php-ext-configure gd --with-freetype --with-jpeg \
-  && docker-php-ext-install pdo_mysql zip gd \
-  && a2enmod rewrite \
-  && a2dismod mpm_event mpm_worker \
-  && rm -rf /var/lib/apt/lists/*
+    git zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
+    libxml2-dev libzip-dev curl gnupg nodejs npm \
+    && docker-php-ext-install pdo pdo_mysql zip gd
 
-# 2) MongoDB PHP extension
-RUN pecl install mongodb-1.21.2 \
+# Install MongoDB PHP driver
+RUN pecl install mongodb \
     && docker-php-ext-enable mongodb
 
-# 3) Set Laravel public as Apache docroot
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
- && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
 
+# Set working directory
 WORKDIR /var/www/html
 
-# 4) Copy app
+# Copy  the app
 COPY . .
 
-# 5) Install Composer
+# Install PHP dependencies
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN composer install --no-dev --optimize-autoloader
 
-# 6) Install PHP deps
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+RUN mkdir -p storage/app/public \
+    && chown -R www-data:www-data storage \
+    && chmod -R 755 storage
 
-# 7) Permissions
-RUN chown -R www-data:www-data storage bootstrap/cache \
- && chmod -R 775 storage bootstrap/cache
 
+
+# Create storage symlink
+RUN php artisan storage:link
+
+# Copy default images into storage/app/public
+COPY storage/app/public/ storage/app/public/
+
+# inside your container
+RUN ls -l public/storage
+RUN ls -l storage/app/public
+
+# Copy package.json for caching and install node deps
+RUN npm ci && npm run build
+
+# Set Apache to serve Laravel's public folder
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+
+
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Expose Apache port
 EXPOSE 80
+
+# Start Apache
 CMD ["apache2-foreground"]
