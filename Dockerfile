@@ -1,5 +1,8 @@
 FROM php:8.2-apache
 
+# Allow composer plugins when running as root in Docker build
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 # System deps + PHP extensions
 RUN apt-get update && apt-get install -y \
     git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
@@ -11,21 +14,22 @@ RUN apt-get update && apt-get install -y \
  && a2enmod mpm_prefork \
  && rm -rf /var/lib/apt/lists/*
 
-# MongoDB PHP extension (MATCH composer.lock)
+# MongoDB PHP extension (PINNED to match your composer.lock requirement ^1.21)
 RUN pecl install mongodb-1.21.2 \
- && docker-php-ext-enable mongodb
+ && docker-php-ext-enable mongodb \
+ && php -r "echo 'MongoDB PHP extension: '.phpversion('mongodb').PHP_EOL;"
 
-# Laravel public folder
+# Set Laravel public as docroot
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
- && sed -ri 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+ && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 WORKDIR /var/www/html
 COPY . .
 
-# Composer
+# Install Composer + dependencies
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
- && composer install --no-dev --no-interaction --optimize-autoloader
+ && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 # Permissions
 RUN mkdir -p storage/app/public \
