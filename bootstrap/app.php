@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request; // ✅ ADD THIS
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,12 +12,20 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-        ->withMiddleware(function (Middleware $middleware): void {
+    ->withMiddleware(function (Middleware $middleware): void {
+
+        // ✅ NEW: TRUST PROXIES (this fixes Mixed Content)
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_ALL
+        );
+
+        // existing middleware alias
         $middleware->alias([
             'twofactor' => \App\Http\Middleware\EnsureTwoFactorIsVerified::class,
         ]);
     })
-
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->create();
