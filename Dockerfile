@@ -6,7 +6,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # System deps + PHP extensions
 RUN apt-get update && apt-get install -y \
     git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
-    libonig-dev libxml2-dev curl \
+    libonig-dev libxml2-dev curl gnupg \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-install pdo_mysql zip gd \
  && a2enmod rewrite \
@@ -14,7 +14,13 @@ RUN apt-get update && apt-get install -y \
  && a2enmod mpm_prefork \
  && rm -rf /var/lib/apt/lists/*
 
-# MongoDB PHP extension (PINNED to match your composer.lock requirement ^1.21)
+# ✅ Install Node.js 20 (needed for Vite build)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt-get update && apt-get install -y nodejs \
+ && node -v && npm -v \
+ && rm -rf /var/lib/apt/lists/*
+
+# MongoDB PHP extension (PINNED)
 RUN pecl install mongodb-1.21.2 \
  && docker-php-ext-enable mongodb \
  && php -r "echo 'MongoDB PHP extension: '.phpversion('mongodb').PHP_EOL;"
@@ -31,10 +37,21 @@ COPY . .
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
  && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
+# ✅ Build frontend assets (creates public/build/manifest.json)
+RUN npm ci
+RUN npm run build
+
+# ✅ HARD CHECK: fail build if manifest missing
+RUN ls -la public/build
+RUN test -f public/build/manifest.json
+
 # Permissions
 RUN mkdir -p storage/app/public \
  && chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
+
+# Storage link (safe if already exists)
+RUN php artisan storage:link || true
 
 EXPOSE 80
 CMD ["apache2-foreground"]
