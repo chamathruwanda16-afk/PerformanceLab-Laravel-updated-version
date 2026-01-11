@@ -3,6 +3,12 @@ FROM php:8.2-apache
 # Allow composer plugins when running as root in Docker build
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
+# Clear caches so new env vars (APP_URL / GOOGLE_REDIRECT_URI) apply
+RUN php artisan config:clear || true \
+ && php artisan cache:clear || true \
+ && php artisan view:clear || true
+
+
 # System deps + PHP extensions
 RUN apt-get update && apt-get install -y \
     git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
