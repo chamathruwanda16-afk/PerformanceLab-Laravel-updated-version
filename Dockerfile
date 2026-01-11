@@ -1,13 +1,6 @@
 FROM php:8.2-apache
 
-# Allow composer plugins when running as root in Docker build
 ENV COMPOSER_ALLOW_SUPERUSER=1
-
-# Clear caches so new env vars (APP_URL / GOOGLE_REDIRECT_URI) apply
-RUN php artisan config:clear || true \
- && php artisan cache:clear || true \
- && php artisan view:clear || true
-
 
 # System deps + PHP extensions
 RUN apt-get update && apt-get install -y \
@@ -20,7 +13,7 @@ RUN apt-get update && apt-get install -y \
  && a2enmod mpm_prefork \
  && rm -rf /var/lib/apt/lists/*
 
-# ✅ Install Node.js 20 (needed for Vite build)
+# Install Node.js 20 (needed for Vite build)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
  && apt-get update && apt-get install -y nodejs \
  && node -v && npm -v \
@@ -43,16 +36,17 @@ COPY . .
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
  && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-# ✅ Build frontend assets (creates public/build/manifest.json)
-RUN npm ci
-RUN npm run build
+# Build frontend assets (creates public/build/manifest.json)
+RUN npm ci && npm run build
 
-# ✅ HARD CHECK: fail build if manifest missing
-RUN ls -la public/build
-RUN test -f public/build/manifest.json
+# HARD CHECK: fail build if manifest missing
+RUN ls -la public/build && test -f public/build/manifest.json
 
-# Permissions
+# Permissions + ensure Laravel session/cache dirs exist (prevents login loops)
 RUN mkdir -p storage/app/public \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
  && chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
 
