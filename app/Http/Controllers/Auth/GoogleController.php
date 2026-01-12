@@ -12,7 +12,8 @@ class GoogleController extends Controller
 {
     public function redirect()
     {
-        return Socialite::driver('google')->redirect();
+        // ✅ MUST be stateless here too (Render/session issues)
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     public function callback()
@@ -20,16 +21,17 @@ class GoogleController extends Controller
         $googleUser = Socialite::driver('google')->stateless()->user();
 
         $user = User::updateOrCreate(
-            [ 'email' => $googleUser->getEmail() ],
+            ['email' => $googleUser->getEmail()],
             [
-                'name' => $googleUser->getName(),
+                'name' => $googleUser->getName() ?? 'Google User',
                 'password' => bcrypt(Str::random(16)),
                 'email_verified_at' => now(),
             ]
         );
 
-        Auth::login($user);
+        // ✅ keep user logged in across tabs
+        Auth::login($user, true);
 
-        return redirect('/dashboard'); // or wherever you want
+        return redirect()->intended('/dashboard');
     }
 }
