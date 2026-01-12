@@ -113,48 +113,39 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
-        'mongodb' => [
+ 'mongodb' => [
     'driver'   => 'mongodb',
-    'dsn'      => env('MONGO_DB_DSN', ''),
+
+    
+    'dsn'      => env('MONGODB_URI', env('MONGO_DB_DSN', '')),
+
+    //  Fallbacks 
     'host'     => env('MONGO_DB_HOST', '127.0.0.1'),
     'port'     => env('MONGO_DB_PORT', 27017),
-    'database' => env('MONGO_DB_DATABASE', 'jdm_shop'),
+
+    //  use your real DB name
+    'database' => env('MONGO_DB_DATABASE', 'performancelab'),
+
     'username' => env('MONGO_DB_USERNAME', ''),
     'password' => env('MONGO_DB_PASSWORD', ''),
+
     'options'  => [
         'database' => env('MONGO_DB_AUTHDB', 'admin'),
     ],
 ],
 
 
+
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Migration Repository Table
-    |--------------------------------------------------------------------------
-    |
-    | This table keeps track of all the migrations that have already run for
-    | your application. Using this information, we can determine which of
-    | the migrations on disk haven't actually been run on the database.
-    |
-    */
+  
 
     'migrations' => [
         'table' => 'migrations',
         'update_date_on_publish' => true,
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Redis Databases
-    |--------------------------------------------------------------------------
-    |
-    | Redis is an open source, fast, and advanced key-value store that also
-    | provides a richer body of commands than a typical key-value system
-    | such as Memcached. You may define your connection settings here.
-    |
-    */
+
 
     'redis' => [
 
