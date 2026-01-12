@@ -2,10 +2,11 @@ FROM php:8.2-apache
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# System deps + PHP extensions
+# System deps + PHP extensions + SSL libs (needed for MongoDB Atlas TLS)
 RUN apt-get update && apt-get install -y \
     git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev curl gnupg \
+    ca-certificates openssl libssl-dev pkg-config \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-install pdo_mysql zip gd \
  && a2enmod rewrite \
@@ -19,7 +20,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
  && node -v && npm -v \
  && rm -rf /var/lib/apt/lists/*
 
-# MongoDB PHP extension (PINNED)
+# MongoDB PHP extension (PINNED) - will compile WITH SSL now
 RUN pecl install mongodb-1.21.2 \
  && docker-php-ext-enable mongodb \
  && php -r "echo 'MongoDB PHP extension: '.phpversion('mongodb').PHP_EOL;"
