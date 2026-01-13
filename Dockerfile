@@ -37,6 +37,12 @@ COPY . .
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
  && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
+RUN rm -f bootstrap/cache/config.php bootstrap/cache/routes-*.php bootstrap/cache/services.php \
+ && php artisan config:clear \
+ && php artisan cache:clear \
+ && php artisan route:clear \
+ && php artisan view:clear
+
 # Build frontend assets (creates public/build/manifest.json)
 RUN npm ci && npm run build
 
