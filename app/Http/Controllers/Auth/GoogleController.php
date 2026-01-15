@@ -10,27 +10,31 @@ use Illuminate\Support\Str;
 
 class GoogleController extends Controller
 {
- public function redirect()
-{
-    return Socialite::driver('google')->redirect();
-}
+    public function redirect()
+    {
+        // ✅ stateless avoids "InvalidStateException" on hosted environments
+        return Socialite::driver('google')->stateless()->redirect();
+    }
 
-public function callback()
-{
-    $googleUser = Socialite::driver('google')->user();
+    public function callback()
+    {
+        // ✅ stateless here too
+        $googleUser = Socialite::driver('google')->stateless()->user();
 
-    $user = User::updateOrCreate(
-        ['email' => $googleUser->getEmail()],
-        [
-            'name' => $googleUser->getName() ?? 'Google User',
-            'password' => bcrypt(Str::random(16)),
-            'email_verified_at' => now(),
-        ]
-    );
+        $user = User::updateOrCreate(
+            ['email' => $googleUser->getEmail()],
+            [
+                'name' => $googleUser->getName() ?? 'Google User',
+                'password' => bcrypt(Str::random(16)),
+                'email_verified_at' => now(),
+            ]
+        );
 
-    Auth::login($user, true);
+        Auth::login($user, true);
 
-    return redirect()->route('dashboard');
-}
+        // ✅ BYPASS 2FA only for Google login (session flag)
+        session(['two_factor_verified' => true]);
 
+        return redirect()->route('dashboard');
+    }
 }
