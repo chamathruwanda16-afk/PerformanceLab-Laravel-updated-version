@@ -41,5 +41,10 @@ return [
     'redirect' => env('GOOGLE_REDIRECT_URI'),
 ],
 
+'mailtrap' => [
+    'token' => env('MAILTRAP_API_TOKEN'),
+],
+
+
 
 ];

@@ -3,37 +3,51 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Notifications\TwoFactorCodeNotification;
-
+use Illuminate\Support\Facades\Http;
 
 class TwoFactorController extends Controller
 {
     public function show()
     {
-        // shows the 2FA form
         return view('auth.two-factor');
     }
 
-public function send(Request $request)
-{
-    $user = $request->user();
+    public function send(Request $request)
+    {
+        $user = $request->user();
 
-    // generate 6-digit code
-    $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // generate 6-digit code
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-    // save code + expiry
-    $user->forceFill([
-        'two_factor_code'       => $code,
-        'two_factor_expires_at' => now()->addMinutes(10),
-    ])->save();
+        // save code + expiry
+        $user->forceFill([
+            'two_factor_code'       => $code,
+            'two_factor_expires_at' => now()->addMinutes(10),
+        ])->save();
 
-    // send email
-    $user->notify(new TwoFactorCodeNotification($code));
+        // ✅ Send via Mailtrap HTTP API (works on Render)
+        $response = Http::withToken(config('services.mailtrap.token'))
+            ->post('https://send.api.mailtrap.io/api/send', [
+                "from" => [
+                    "email" => env('MAIL_FROM_ADDRESS', 'no-reply@performancelab.com'),
+                    "name"  => env('MAIL_FROM_NAME', 'PerformanceLab'),
+                ],
+                "to" => [
+                    ["email" => $user->email],
+                ],
+                "subject" => "Your verification code",
+                "text"    => "Your verification code is: {$code}",
+            ]);
 
-    // for demo you *can* show the code; remove in production
-   return back()->with('success', 'Verification code sent to your email.');
-}
+        // Optional: if API fails, show error instead of silently failing
+        if (! $response->successful()) {
+            return back()->withErrors([
+                'email' => 'Could not send verification email. Please try again.',
+            ]);
+        }
 
+        return back()->with('success', 'Verification code sent to your email.');
+    }
 
     public function verify(Request $request)
     {
@@ -54,13 +68,11 @@ public function send(Request $request)
             ]);
         }
 
-        // mark this session as 2FA verified
         session(['two_factor_verified' => true]);
 
-        // clear used code
         $user->forceFill([
-            'two_factor_code'        => null,
-            'two_factor_expires_at'  => null,
+            'two_factor_code'       => null,
+            'two_factor_expires_at' => null,
         ])->save();
 
         return redirect()->route('account.index')
