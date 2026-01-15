@@ -2,9 +2,24 @@
   <div class="max-w-md mx-auto mt-10 bg-white/5 border border-white/10 rounded-2xl p-6">
     <h1 class="text-2xl font-bold mb-4 text-white">Two-Factor Verification</h1>
 
+    {{-- ✅ Success message (your controller uses 'success') --}}
+    @if (session('success'))
+      <div class="mb-4 rounded-lg bg-green-600/20 text-green-200 px-4 py-3">
+        {{ session('success') }}
+      </div>
+    @endif
+
+    {{-- Optional: some Laravel features use 'status' --}}
     @if (session('status'))
       <div class="mb-4 rounded-lg bg-green-600/20 text-green-200 px-4 py-3">
         {{ session('status') }}
+      </div>
+    @endif
+
+    {{-- ✅ Show any errors (ex: Mail sending fails) --}}
+    @if ($errors->any())
+      <div class="mb-4 rounded-lg bg-red-600/20 text-red-200 px-4 py-3">
+        {{ $errors->first() }}
       </div>
     @endif
 
