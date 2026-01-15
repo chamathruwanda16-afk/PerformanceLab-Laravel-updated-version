@@ -23,27 +23,18 @@ class TwoFactorController extends Controller
         'two_factor_expires_at' => now()->addMinutes(10),
     ])->save();
 
-    $response = Http::withToken(config('services.mailtrap.token'))
-        ->post('https://send.api.mailtrap.io/api/send', [
-            "from" => [
-                "email" => env('MAIL_FROM_ADDRESS', 'no-reply@performancelab.com'),
-                "name"  => env('MAIL_FROM_NAME', 'PerformanceLab'),
-            ],
-            "to" => [
-                ["email" => $user->email],
-            ],
-            "subject" => "Your verification code",
-            "text"    => "Your verification code is: {$code}",
-        ]);
-
-    if (! $response->successful()) {
+    // Send using Laravel Notifications -> Mail (SMTP)
+    try {
+        $user->notify(new \App\Notifications\TwoFactorCodeNotification($code));
+    } catch (\Throwable $e) {
         return back()->withErrors([
-            'email' => 'Mailtrap failed: ' . $response->status() . ' - ' . $response->body(),
+            'email' => 'Could not send verification email (SMTP). Check Mailtrap SMTP settings.',
         ]);
     }
 
     return back()->with('status', 'Verification code sent to your email.');
 }
+
 
     public function verify(Request $request)
     {
