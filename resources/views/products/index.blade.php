@@ -1,6 +1,6 @@
 <x-app-layout>
   @php
-    // Safe fallback if controller forgot to pass categories
+    
     if (!isset($categories)) {
         try {
             $categories = \App\Models\Category::orderBy('name')->get(['id','name','slug']);
@@ -38,7 +38,7 @@
     class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30"
   />
 
-  {{-- ✅ AUTOCOMPLETE DROPDOWN (NEW) --}}
+  
   <div
     id="search-suggestions"
     class="absolute z-20 mt-1 w-full rounded-lg bg-gray-900 border border-white/10 shadow-lg hidden"
@@ -97,7 +97,7 @@
             @endforeach
           </ul>
 
-          {{-- 🔥 Popular Searches (from Mongo) --}}
+          {{--  Popular Searches (from Mongo) --}}
           @if(!empty($popularSearches) && count($popularSearches) > 0)
             <div class="mt-6 pt-4 border-t border-white/10">
               <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-400">

@@ -23,11 +23,7 @@ use App\Http\Controllers\SearchController;
 use App\Models\SearchLog;
 
 
-/*
-|--------------------------------------------------------------------------
-| ✅ TEMP: Health check to confirm Laravel is responding on Railway
-|--------------------------------------------------------------------------
-*/
+
 Route::get('/health', function () {
     return response()->json([
         'status' => 'ok',
@@ -121,7 +117,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/account/security', [AccountController::class, 'security'])
         ->name('account.security');
 
-    // Jetstream 2FA
+    // Jet 2FA
     Route::post('/user/two-factor-authentication', [TwoFactorAuthController::class, 'enable'])
         ->middleware('password.confirm')
         ->name('two-factor.enable');
@@ -184,7 +180,7 @@ Route::middleware(['auth', 'can:admin'])
     ->name('admin.')
     ->group(function () {
 
-        // ✅ SINGLE admin dashboard (NO DUPLICATE)
+        //  SINGLE admin dashboard (NO DUPLICATE)
         Route::view('/', 'admin.dashboard')->name('dashboard');
 
         // Products

@@ -8,7 +8,7 @@ use App\Http\Controllers\Api\AuthTokenController;
 
 /*
 |--------------------------------------------------------------------------
-| API Login (Issue Sanctum Token)
+| API Login 
 |--------------------------------------------------------------------------
 */
 Route::post('/login', [AuthTokenController::class, 'issueToken']);
@@ -16,12 +16,12 @@ Route::post('/token', [AuthTokenController::class, 'issueToken']); // optional
 
 /*
 |--------------------------------------------------------------------------
-| Protected API Routes (Sanctum)
+| Protected API Routes 
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
 
-    // ✅ Products API (TOKEN REQUIRED)
+    //  Products API 
     Route::get('/products', fn () =>
         Product::with('category')->paginate(20)
     );

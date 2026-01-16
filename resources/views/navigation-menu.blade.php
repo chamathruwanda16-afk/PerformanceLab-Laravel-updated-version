@@ -53,7 +53,7 @@
                 <div class="text-slate-500 text-xs">({{ $roleText }})</div>
               </div>
 
-              {{-- ✅ Show admin link using same logic as roleText --}}
+              {{--  Show admin link using same logic as roleText --}}
               @if($isAdmin)
                 <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2.5 text-sm hover:bg-slate-50">
                   Admin Dashboard
@@ -111,7 +111,7 @@
             <div>({{ $roleText }})</div>
           </div>
 
-          {{-- ✅ Same fix for mobile --}}
+          {{--  Same fix for mobile --}}
           @if($isAdmin)
             <a href="{{ route('admin.dashboard') }}" class="block text-gray-300 hover:text-white">
               Admin Dashboard
