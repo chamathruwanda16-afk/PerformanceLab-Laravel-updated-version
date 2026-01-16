@@ -20,15 +20,14 @@ class OrderApiController extends Controller
         ]);
 
         // --------------------------------------------------------
-        // 🔐 Sanctum: Authenticated API user
+        //  Sanctum: Authenticated API user
         // --------------------------------------------------------
-        $user = $request->user();   // THIS shows Sanctum is working
-        // If no user, Sanctum blocked them before this point.
+        $user = $request->user();   
 
         $subtotal = 0;
 
         // --------------------------------------------------------
-        // 💰 Calculate subtotal from items
+        //  Calculate subtotal from items
         // --------------------------------------------------------
         foreach ($data['items'] as $item) {
             $product = Product::findOrFail($item['product_id']);
@@ -36,7 +35,7 @@ class OrderApiController extends Controller
         }
 
         // --------------------------------------------------------
-        // 🧾 Create Order for authenticated user
+        //  Create Order for authenticated user
         // --------------------------------------------------------
         $order = Order::create([
             'user_id'  => $user->id,
@@ -48,7 +47,7 @@ class OrderApiController extends Controller
         ]);
 
         // --------------------------------------------------------
-        // 📦 Create order item records
+        //  Create order item records
         // --------------------------------------------------------
         foreach ($data['items'] as $item) {
             $product = Product::findOrFail($item['product_id']);
@@ -62,7 +61,7 @@ class OrderApiController extends Controller
         }
 
         // --------------------------------------------------------
-        // 🔄 Return order with items + product details
+        //  Return order with items + product details
         // --------------------------------------------------------
         return response()->json(
             $order->load('items.product'),

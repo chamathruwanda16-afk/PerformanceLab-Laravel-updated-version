@@ -78,9 +78,9 @@ foreach ($this->items as $item) {
     OrderItem::create([
         'order_id'   => $order->id,
         'product_id' => $item['product_id'],
-        'name'       => $item['name'],                // 👈 NEW – satisfies NOT NULL column
+        'name'       => $item['name'],                
         'qty'        => $item['qty'],
-        'unit_price' => $item['price'],               // uses price from session cart
+        'unit_price' => $item['price'],               
         'line_total' => $item['price'] * $item['qty'],
     ]);
 
